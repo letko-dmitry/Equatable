@@ -16,6 +16,19 @@ final class Object<Value: Equatable> {
     }
 }
 
+@Equatable
+final class Object2<Value: Equatable> {
+    let value1: Value
+    let value2: Value
+    let value3: Value
+    
+    init(value1: Value, value2: Value, value3: Value) {
+        self.value1 = value1
+        self.value2 = value2
+        self.value3 = value3
+    }
+}
+
 let object1 = Object(value: 123)
 let objeect2 = Object(value: 123)
 let objeect3 = Object(value: 234)

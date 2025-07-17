@@ -57,14 +57,20 @@ public enum Equatable: ExtensionMacro {
                         .compactMap { $0.pattern.as(IdentifierPatternSyntax.self) }
                         .map { $0.identifier.text }
                     
-                    if let last = properties.last {
-                        "lhs === rhs ||"
+                    if let first = properties.first {
+                        "if lhs === rhs { return true }\n\n"
                         
-                        for property in properties.dropLast() {
-                            "lhs.\(raw: property) == rhs.\(raw: property) &&"
+                        if let last = properties.dropFirst().last {
+                            "return lhs.\(raw: first) == rhs.\(raw: first) &&"
+                            
+                            for property in properties.dropFirst().dropLast() {
+                                "lhs.\(raw: property) == rhs.\(raw: property) &&"
+                            }
+                            
+                            "lhs.\(raw: last) == rhs.\(raw: last)"
+                        } else {
+                            "return lhs.\(raw: first) == rhs.\(raw: first)"
                         }
-                        
-                        "lhs.\(raw: last) == rhs.\(raw: last)"
                     } else {
                         "lhs === rhs"
                     }
