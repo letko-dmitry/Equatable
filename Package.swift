@@ -7,8 +7,9 @@ import CompilerPluginSupport
 let package = Package(
     name: "Equatable",
     platforms: [
-        .macOS(.v14),
-        .iOS(.v17)
+        .macOS(.v13),
+        .iOS(.v16),
+        .watchOS(.v9)
     ],
     products: [
         .library(
