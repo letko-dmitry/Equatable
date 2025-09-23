@@ -29,6 +29,24 @@ final class Object2<Value: Equatable> {
     }
 }
 
+@Equatable
+public final class Object3<Value: Equatable> {
+    let value: Value
+    
+    init(value: Value) {
+        self.value = value
+    }
+}
+
+@Equatable
+package final class Object4<Value: Equatable> {
+    let value: Value
+    
+    init(value: Value) {
+        self.value = value
+    }
+}
+
 let object1 = Object(value: 123)
 let objeect2 = Object(value: 123)
 let objeect3 = Object(value: 234)

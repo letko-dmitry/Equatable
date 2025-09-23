@@ -33,6 +33,7 @@ public enum Equatable: ExtensionMacro {
         
         let modifierKeywords: [TokenKind: TokenKind] = [
             .keyword(.public): .keyword(.public),
+            .keyword(.package): .keyword(.package),
             .keyword(.private): .keyword(.fileprivate),
             .keyword(.fileprivate): .keyword(.fileprivate)
         ]
