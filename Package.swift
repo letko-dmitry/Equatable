@@ -26,24 +26,52 @@ let package = Package(
         .macro(
             name: "EquatableMacros",
             dependencies: [
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
             ],
-            path: "Sources/Macros"
+            path: "Sources/Macros",
+            swiftSettings: .`default`
         ),
         .target(
             name: "Equatable",
             dependencies: [
                 .target(name: "EquatableMacros")
             ],
-            path: "Sources/Equatable"
+            path: "Sources/Equatable",
+            swiftSettings: .`default`
         ),
         .executableTarget(
             name: "EquatablePlaygound",
             dependencies: [
                 "Equatable"
             ],
-            path: "Sources/Playground"
+            path: "Sources/Playground",
+            swiftSettings: .`default`
         )
     ]
 )
+
+// MARK: - SwiftSetting
+private extension SwiftSetting {
+    static let disableReflectionMetadata = SwiftSetting.unsafeFlags(["-Xfrontend", "-disable-reflection-metadata"], .when(configuration: .release))
+    static let internalizeAtLink = SwiftSetting.unsafeFlags(["-Xfrontend", "-internalize-at-link"], .when(configuration: .release))
+    static let approachableConcurrency = SwiftSetting.enableUpcomingFeature("ApproachableConcurrency")
+    static let existentialAny = SwiftSetting.enableUpcomingFeature("ExistentialAny")
+    static let internalImportsByDefault = SwiftSetting.enableUpcomingFeature("InternalImportsByDefault")
+    static let memberImportVisibility = SwiftSetting.enableUpcomingFeature("MemberImportVisibility")
+}
+
+// MARK: - SwiftSetting
+private extension Array<SwiftSetting> {
+    static let `default`: Self = [
+        .disableReflectionMetadata,
+        .internalizeAtLink,
+        .approachableConcurrency,
+        .existentialAny,
+        .internalImportsByDefault,
+        .memberImportVisibility,
+        .strictMemorySafety()
+    ]
+}

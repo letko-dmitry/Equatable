@@ -5,10 +5,10 @@
 //  Created by Dzmitry Letko on 17/02/2025.
 //
 
-import SwiftCompilerPlugin
-import SwiftSyntax
+public import SwiftSyntax
+public import SwiftSyntaxMacros
+
 import SwiftSyntaxBuilder
-import SwiftSyntaxMacros
 
 public enum EquatableExtensionError: CustomStringConvertible, Error {
     case finalClassOrActor
