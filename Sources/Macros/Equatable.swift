@@ -30,6 +30,17 @@ public enum Equatable: ExtensionMacro {
             return []
         }
 
+        let type = type.trimmed
+
+        // The compiler leaves `Equatable` out of `protocols` when the type lists it, inherits it from a superclass, or gets it from an extension.
+        guard !protocols.isEmpty || declaration.inheritanceClause?.inheritedTypes.contains(where: \.isEquatable) == true else {
+            let message = MacroExpansionErrorMessage("`\(type)` conforms to `Equatable` through a superclass or an extension; `@Equatable` only implements `==` for `Equatable` declared on the type itself")
+
+            context.diagnose(Diagnostic(node: node, message: message))
+
+            return []
+        }
+
         let variables = declaration.memberBlock.members
             .compactMap { $0.decl.as(VariableDeclSyntax.self) }
             .filter { !$0.modifiers.contains(.static, .class) && $0.bindings.contains(where: \.isStored) }
@@ -48,11 +59,9 @@ public enum Equatable: ExtensionMacro {
                 }
             }
         }
-        
-        let type = type.trimmed
-        
+
         return try [
-            ExtensionDeclSyntax("extension \(type): Equatable") {
+            ExtensionDeclSyntax("extension \(type)\(raw: protocols.isEmpty ? "" : ": Equatable")") {
                 try FunctionDeclSyntax("\(modifiers)static func == (lhs: \(type), rhs: \(type)) -> Bool") {
                     let properties = variables
                         .flatMap(\.bindings)
@@ -113,6 +122,13 @@ private extension PatternBindingSyntax {
         case .getter: false
         case .accessors(let accessors): accessors.allSatisfy { [.keyword(.willSet), .keyword(.didSet)].contains($0.accessorSpecifier.tokenKind) }
         }
+    }
+}
+
+// MARK: - private
+private extension InheritedTypeSyntax {
+    var isEquatable: Bool {
+        ["Equatable", "Swift.Equatable"].contains(type.trimmedDescription)
     }
 }
 
