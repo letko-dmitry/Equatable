@@ -50,6 +50,18 @@ let package = Package(
             ],
             path: "Sources/Playground",
             swiftSettings: .`default`
+        ),
+        .testTarget(
+            name: "EquatableTests",
+            dependencies: [
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxMacroExpansion", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxMacrosGenericTestSupport", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+                .target(name: "EquatableMacros")
+            ],
+            path: "Sources/Tests",
+            swiftSettings: .`default`
         )
     ]
 )
