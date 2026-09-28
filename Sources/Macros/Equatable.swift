@@ -45,6 +45,19 @@ public enum Equatable: ExtensionMacro {
             .compactMap { $0.decl.as(VariableDeclSyntax.self) }
             .filter { !$0.modifiers.contains(.static, .class) && $0.bindings.contains(where: \.isStored) }
 
+        if declaration.is(ActorDeclSyntax.self) {
+            let isolated = variables.filter { $0.bindingSpecifier.tokenKind == .keyword(.var) && !$0.modifiers.contains(.nonisolated) }
+
+            for variable in isolated {
+                let names = variable.bindings.map(\.pattern.trimmedDescription).joined(separator: ", ")
+                let message = MacroExpansionErrorMessage("Actor-isolated `var \(names)` can't be read by the nonisolated `==`; declare it with `let`")
+
+                context.diagnose(Diagnostic(node: variable.bindingSpecifier, message: message))
+            }
+
+            guard isolated.isEmpty else { return [] }
+        }
+
         let modifierKeywords: [TokenKind: TokenKind] = [
             .keyword(.public): .keyword(.public),
             .keyword(.package): .keyword(.package),
