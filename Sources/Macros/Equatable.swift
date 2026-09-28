@@ -82,22 +82,11 @@ public enum Equatable: ExtensionMacro {
                         .compactMap { $0.pattern.as(IdentifierPatternSyntax.self) }
                         .map { $0.identifier.text }
                     
-                    if let first = properties.first {
-                        "if lhs === rhs { return true }\n\n"
-                        
-                        if let last = properties.dropFirst().last {
-                            "return lhs.\(raw: first) == rhs.\(raw: first) &&"
-                            
-                            for property in properties.dropFirst().dropLast() {
-                                "lhs.\(raw: property) == rhs.\(raw: property) &&"
-                            }
-                            
-                            "lhs.\(raw: last) == rhs.\(raw: last)"
-                        } else {
-                            "return lhs.\(raw: first) == rhs.\(raw: first)"
-                        }
-                    } else {
+                    if properties.isEmpty {
                         "lhs === rhs"
+                    } else {
+                        "if lhs === rhs { return true }\n\n"
+                        "return \(raw: properties.map { "lhs.\($0) == rhs.\($0)" }.joined(separator: " &&\n"))"
                     }
                 }
             }
