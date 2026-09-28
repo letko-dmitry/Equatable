@@ -30,6 +30,10 @@ public enum Equatable: ExtensionMacro {
             return []
         }
 
+        let variables = declaration.memberBlock.members
+            .compactMap { $0.decl.as(VariableDeclSyntax.self) }
+            .filter { !$0.modifiers.contains(.static, .class) && $0.bindings.contains(where: \.isStored) }
+
         let modifierKeywords: [TokenKind: TokenKind] = [
             .keyword(.public): .keyword(.public),
             .keyword(.package): .keyword(.package),
@@ -50,10 +54,9 @@ public enum Equatable: ExtensionMacro {
         return try [
             ExtensionDeclSyntax("extension \(type): Equatable") {
                 try FunctionDeclSyntax("\(modifiers)static func == (lhs: \(type), rhs: \(type)) -> Bool") {
-                    let properties = declaration.memberBlock.members
-                        .compactMap { $0.decl.as(VariableDeclSyntax.self) }
-                        .compactMap { $0.bindings.first }
-                        .filter { $0.accessorBlock == nil }
+                    let properties = variables
+                        .flatMap(\.bindings)
+                        .filter(\.isStored)
                         .compactMap { $0.pattern.as(IdentifierPatternSyntax.self) }
                         .map { $0.identifier.text }
                     
@@ -97,6 +100,18 @@ private extension DeclModifierListSyntax {
     func contains(_ keywords: Keyword...) -> Bool {
         contains { modifier in
             keywords.contains { modifier.name.tokenKind == .keyword($0) }
+        }
+    }
+}
+
+// MARK: - private
+private extension PatternBindingSyntax {
+    /// A stored property has no accessors or only `willSet`/`didSet` observers.
+    var isStored: Bool {
+        switch accessorBlock?.accessors {
+        case nil: true
+        case .getter: false
+        case .accessors(let accessors): accessors.allSatisfy { [.keyword(.willSet), .keyword(.didSet)].contains($0.accessorSpecifier.tokenKind) }
         }
     }
 }
