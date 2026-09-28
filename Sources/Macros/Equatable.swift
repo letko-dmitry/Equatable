@@ -8,29 +8,28 @@
 public import SwiftSyntax
 public import SwiftSyntaxMacros
 
+import SwiftDiagnostics
 import SwiftSyntaxBuilder
-
-public enum EquatableExtensionError: CustomStringConvertible, Error {
-    case finalClassOrActor
-    
-    public var description: String {
-        switch self {
-        case .finalClassOrActor:
-            "@Equatable can only be applied to final class or actor"
-        }
-    }
-}
 
 public enum Equatable: ExtensionMacro {
     public static func expansion(of node: SwiftSyntax.AttributeSyntax, attachedTo declaration: some SwiftSyntax.DeclGroupSyntax, providingExtensionsOf type: some SwiftSyntax.TypeSyntaxProtocol, conformingTo protocols: [SwiftSyntax.TypeSyntax], in context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
-        guard [.classDecl, .actorDecl].contains(declaration.kind) else {
-            throw EquatableExtensionError.finalClassOrActor
+        if let classDecl = declaration.as(ClassDeclSyntax.self), !classDecl.modifiers.contains(.final) {
+            let message = MacroExpansionErrorMessage("`@Equatable` can only be applied to a final class, since `==` inherited by a subclass would ignore the subclass's properties")
+            let fixIts = classDecl.modifiers.contains(.open) ? [] : [finalFixIt(for: classDecl)]
+
+            context.diagnose(Diagnostic(node: classDecl.classKeyword, message: message, fixIts: fixIts))
+
+            return []
         }
-        
-        if case .classDecl = declaration.kind, !declaration.modifiers.contains(where: { $0.name.tokenKind == .keyword(.final) }) {
-            throw EquatableExtensionError.finalClassOrActor
+
+        guard declaration.is(ClassDeclSyntax.self) || declaration.is(ActorDeclSyntax.self) else {
+            let message = MacroExpansionErrorMessage("`@Equatable` can only be applied to a final class or an actor; structs and enums get a synthesized `==` by conforming to `Equatable`")
+
+            context.diagnose(Diagnostic(node: node, message: message))
+
+            return []
         }
-        
+
         let modifierKeywords: [TokenKind: TokenKind] = [
             .keyword(.public): .keyword(.public),
             .keyword(.package): .keyword(.package),
@@ -79,6 +78,26 @@ public enum Equatable: ExtensionMacro {
             }
         ]
 
+    }
+}
+
+// MARK: - private
+private extension Equatable {
+    static func finalFixIt(for classDecl: ClassDeclSyntax) -> FixIt {
+        var finalClassDecl = classDecl
+        finalClassDecl.modifiers.append(DeclModifierSyntax(name: .keyword(.final, leadingTrivia: classDecl.classKeyword.leadingTrivia, trailingTrivia: .space)))
+        finalClassDecl.classKeyword.leadingTrivia = []
+
+        return FixIt(message: MacroExpansionFixItMessage("Add `final`"), changes: [.replace(oldNode: Syntax(classDecl), newNode: Syntax(finalClassDecl))])
+    }
+}
+
+// MARK: - private
+private extension DeclModifierListSyntax {
+    func contains(_ keywords: Keyword...) -> Bool {
+        contains { modifier in
+            keywords.contains { modifier.name.tokenKind == .keyword($0) }
+        }
     }
 }
 
